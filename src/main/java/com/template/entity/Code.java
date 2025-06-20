@@ -25,6 +25,17 @@ public class Code extends BaseAuditEntity {
     @Column
     private String category;
 
+    @Column(name = "display_order", nullable = false)
+    @Builder.Default
+    private Integer displayOrder = 0;
+
+    @Column(length = 500)
+    private String description;
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Code parentCode; // null for country, country for state, state for city
