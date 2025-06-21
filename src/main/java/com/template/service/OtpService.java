@@ -4,7 +4,10 @@ import com.template.entity.Otp;
 import com.template.entity.User;
 import com.template.repository.OtpRepository;
 import com.template.repository.UserRepository;
+import com.template.util.IpAddressUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,11 +18,14 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OtpService {
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final RateLimitService rateLimitService;
+    private final IpAddressUtil ipAddressUtil;
 
     @Value("${app.otp.length:6}")
     private int otpLength;
@@ -39,9 +45,22 @@ public class OtpService {
         return sb.toString();
     }
 
-    public boolean sendOtp(String email) {
+    public OtpSendResult sendOtp(String email, HttpServletRequest request) {
+        // Check rate limiting
+        String rateLimitKey = ipAddressUtil.getRateLimitKey(request, "otp");
+        if (!rateLimitService.isAllowed(rateLimitKey)) {
+            long remainingTime = rateLimitService.getTimeUntilReset(rateLimitKey);
+            log.warn("Rate limit exceeded for IP: {}, email: {}",
+                    ipAddressUtil.getClientIpAddress(request), email);
+            return new OtpSendResult(false, "Rate limit exceeded. Please try again in " +
+                    remainingTime + " seconds.", remainingTime);
+        }
+
         Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) return false;
+        if (userOpt.isEmpty()) {
+            log.warn("OTP requested for non-existent email: {}", email);
+            return new OtpSendResult(false, "Email not found.", 0);
+        }
 
         String otpCode = generateOtp();
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(otpExpiryMinutes);
@@ -52,7 +71,36 @@ public class OtpService {
                 .expiryTime(expiryTime)
                 .used(false)
                 .build();
-        Otp savedOtp=otpRepository.save(otp);
+        Otp savedOtp = otpRepository.save(otp);
+
+        try {
+            emailService.sendOtpEmail(email, otpCode);
+            log.info("OTP sent successfully to email: {}", email);
+            return new OtpSendResult(true, "OTP sent successfully.", 0);
+        } catch (Exception e) {
+            otpRepository.delete(savedOtp);
+            log.error("Failed to send OTP to email: {}", email, e);
+            return new OtpSendResult(false, "Failed to send OTP. Please try again.", 0);
+        }
+    }
+
+    // Legacy method for backward compatibility
+    public boolean sendOtp(String email) {
+        log.warn("Using legacy sendOtp method without rate limiting for email: {}", email);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty())
+            return false;
+
+        String otpCode = generateOtp();
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(otpExpiryMinutes);
+
+        Otp otp = Otp.builder()
+                .email(email)
+                .otpCode(otpCode)
+                .expiryTime(expiryTime)
+                .used(false)
+                .build();
+        Otp savedOtp = otpRepository.save(otp);
 
         try {
             emailService.sendOtpEmail(email, otpCode);
@@ -68,12 +116,15 @@ public class OtpService {
         if (otpOpt.isPresent()) {
             Otp otp = otpOpt.get();
             if (LocalDateTime.now().isAfter(otp.getExpiryTime())) {
+                log.warn("Expired OTP used for email: {}", email);
                 return false;
             }
             otp.setUsed(true);
             otpRepository.save(otp);
+            log.info("OTP verified successfully for email: {}", email);
             return true;
         }
+        log.warn("Invalid OTP used for email: {}", email);
         return false;
     }
 
@@ -85,6 +136,7 @@ public class OtpService {
             user.setAccountNonLocked(true);
             user.setFailedLoginAttempts(0);
             userRepository.save(user);
+            log.info("Account unlocked for email: {}", email);
             return true;
         }
         return false;
@@ -97,6 +149,7 @@ public class OtpService {
             User user = userOpt.get();
             user.setAccountExpiryDate(LocalDateTime.now().plusYears(accountExpiryYears));
             userRepository.save(user);
+            log.info("Account expiry extended for email: {}", email);
             return true;
         }
         return false;
@@ -116,6 +169,7 @@ public class OtpService {
             // Set new password
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
+            log.info("Password updated for email: {}", email);
             return true;
         }
         return false;
@@ -132,5 +186,30 @@ public class OtpService {
         return userRepository.findByEmail(email)
                 .map(u -> u.getAccountExpiryDate() != null && u.getAccountExpiryDate().isBefore(LocalDateTime.now()))
                 .orElse(false);
+    }
+
+    // Result class for OTP send operations
+    public static class OtpSendResult {
+        private final boolean success;
+        private final String message;
+        private final long timeUntilReset;
+
+        public OtpSendResult(boolean success, String message, long timeUntilReset) {
+            this.success = success;
+            this.message = message;
+            this.timeUntilReset = timeUntilReset;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public long getTimeUntilReset() {
+            return timeUntilReset;
+        }
     }
 }

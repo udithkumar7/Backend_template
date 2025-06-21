@@ -36,28 +36,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/logout", "/h2-console/**").permitAll()
-                .requestMatchers("/api/audit-test/**").permitAll()
-                .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
-                .requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
-                .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
-                .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
-                .requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
-                .requestMatchers(HttpMethod.GET, "/api/location-codes/**").permitAll() // Allow viewing location codes for testing
-                .requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
-                .requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
-                .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/menus", "/api/menus/role/*").hasAuthority("ROLE_SUPERADMIN")
-                .requestMatchers("/api/users/crud/**").permitAll()
-                .requestMatchers("/api/users/*/roles").permitAll()
-                //.requestMatchers("/api/otp/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(new JwtAuthFilter(jwtUtil, tokenBlacklistService), UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/login", "/api/auth/logout", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/audit-test/**").permitAll()
+                        .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
+                        .requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
+                        .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
+                        .requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
+                        .requestMatchers(HttpMethod.GET, "/api/location-codes/**").permitAll() // Allow viewing location
+                                                                                               // codes for testing
+                        .requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code
+                                                                                               // ordering for testing
+                        .requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code
+                                                                                             // creation for testing
+                        .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus", "/api/menus/role/*")
+                        .hasAuthority("ROLE_SUPERADMIN")
+                        .requestMatchers("/api/users/crud/**").permitAll()
+                        .requestMatchers("/api/users/*/roles").permitAll()
+                        .requestMatchers("/api/otp/**").permitAll()
+                        .anyRequest().authenticated())
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(new JwtAuthFilter(jwtUtil, tokenBlacklistService),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
