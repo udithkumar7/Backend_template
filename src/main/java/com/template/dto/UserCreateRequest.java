@@ -6,22 +6,27 @@ import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.template.util.ValidationConstants;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserCreateRequest {
     
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    @NotBlank(message = ValidationConstants.NOT_BLANK_MESSAGE)
+    @Size(min = 3, max = 50, message = ValidationConstants.USERNAME_SIZE_MESSAGE)
+    @Pattern(regexp = ValidationConstants.USERNAME_PATTERN, message = ValidationConstants.USERNAME_MESSAGE)
     private String username;
     
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = ValidationConstants.NOT_BLANK_MESSAGE)
+    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @Pattern(regexp = ValidationConstants.PASSWORD_PATTERN, message = ValidationConstants.PASSWORD_MESSAGE)
     private String password;
     
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
+    @NotBlank(message = ValidationConstants.NOT_BLANK_MESSAGE)
+    @Email(message = ValidationConstants.EMAIL_MESSAGE)
+    @Size(min = 5, max = 100, message = ValidationConstants.EMAIL_SIZE_MESSAGE)
     private String email;
 }
