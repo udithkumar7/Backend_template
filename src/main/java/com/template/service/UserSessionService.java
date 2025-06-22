@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -39,6 +40,20 @@ public class UserSessionService {
         Deque<String> tokens = userTokens.get(username);
         if (tokens != null) {
             tokens.remove(token);
+        }
+    }
+    
+    public synchronized void removeAllTokensForUser(String username) {
+        Deque<String> tokens = userTokens.get(username);
+        if (tokens != null) {
+            // Blacklist all existing tokens for the user
+            Instant now = Instant.now();
+            for (String token : tokens) {
+                blacklistedTokenRepository.save(
+                    BlacklistedToken.builder().token(token).expiry(now.plus(Duration.ofHours(24))).build()
+                );
+            }
+            tokens.clear();
         }
     }
 }

@@ -20,20 +20,39 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration}")
-    private Long expiration;
+    @Value("${jwt.access-token.expiration}")
+    private Long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private Long refreshTokenExpiration;
+
+    public enum TokenType {
+        ACCESS, REFRESH
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateToken(String username, Set<String> authorities) {
+    public String generateAccessToken(String username, Set<String> authorities) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("authorities", authorities);
-        return createToken(claims, username);
+        claims.put("type", TokenType.ACCESS.name());
+        return createToken(claims, username, accessTokenExpiration);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    public String generateRefreshToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", TokenType.REFRESH.name());
+        return createToken(claims, username, refreshTokenExpiration);
+    }
+
+    // Backward compatibility
+    public String generateToken(String username, Set<String> authorities) {
+        return generateAccessToken(username, authorities);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject, Long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
@@ -51,12 +70,55 @@ public class JwtUtil {
         return (username.equals(tokenUsername) && !isTokenExpired(token));
     }
 
+    public Boolean validateAccessToken(String token, String username) {
+        if (!isAccessToken(token)) {
+            return false;
+        }
+        return validateToken(token, username);
+    }
+
+    public Boolean validateRefreshToken(String token, String username) {
+        if (!isRefreshToken(token)) {
+            return false;
+        }
+        return validateToken(token, username);
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            String type = extractClaim(token, claims -> claims.get("type", String.class));
+            return TokenType.ACCESS.name().equals(type);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            String type = extractClaim(token, claims -> claims.get("type", String.class));
+            return TokenType.REFRESH.name().equals(type);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> extractAuthorities(String token) {
+        return extractClaim(token, claims -> {
+            Object authorities = claims.get("authorities");
+            if (authorities instanceof Set) {
+                return (Set<String>) authorities;
+            }
+            return null;
+        });
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

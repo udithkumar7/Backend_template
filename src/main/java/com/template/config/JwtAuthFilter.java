@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Set;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -37,16 +38,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (token != null && !tokenBlacklistService.isTokenBlacklisted(token)) {
             String username = jwtUtil.extractUsername(token);
-            if (username != null && jwtUtil.validateToken(token, username)) {
+            
+            // Only allow access tokens for API access, reject refresh tokens
+            if (username != null && jwtUtil.isAccessToken(token) && jwtUtil.validateAccessToken(token, username)) {
                 // Extract authorities from JWT
-                var claims = jwtUtil.extractAllClaims(token);
-                var authoritiesObj = claims.get("authorities");
+                Set<String> authoritiesSet = jwtUtil.extractAuthorities(token);
                 java.util.List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
-                if (authoritiesObj instanceof java.util.Collection<?>) {
-                    for (Object authority : (java.util.Collection<?>) authoritiesObj) {
-                        authorities.add(new SimpleGrantedAuthority(authority.toString()));
+                
+                if (authoritiesSet != null) {
+                    for (String authority : authoritiesSet) {
+                        authorities.add(new SimpleGrantedAuthority(authority));
                     }
                 }
+                
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 new User(username, "", authorities),
