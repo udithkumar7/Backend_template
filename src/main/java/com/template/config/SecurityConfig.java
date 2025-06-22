@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/logout", "/h2-console/**").permitAll()
                 .requestMatchers("/api/audit-test/**").permitAll()
                 .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
+                .requestMatchers("/api/jquery/**").permitAll() // Allow access to jQuery backend endpoints
                 .requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
                 .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
                 .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
