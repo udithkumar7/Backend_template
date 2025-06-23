@@ -2,8 +2,11 @@ package com.template.controller;
 
 import com.template.dto.UserCreateRequest;
 import com.template.entity.User;
+import com.template.entity.Role;
 import com.template.repository.UserRepository;
+import com.template.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -15,29 +18,41 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/crud")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class UserCrudController {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     
     @Value("${auth.account-expiry-years:1}")
     private int accountExpiryYears;
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody UserCreateRequest userRequest) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateRequest userRequest) {
         // Check if username already exists
         if (userRepository.findByUsername(userRequest.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
         }
         
         // Check if email already exists
         if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
         }
+        
+        // Find the default user role
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new RuntimeException("Default USER role not found"));
+        
+        // Create role set with default user role
+        Set<Role> roles = new HashSet<>();
+        roles.add(userRole);
         
         // Create new user
         User user = User.builder()
@@ -47,10 +62,13 @@ public class UserCrudController {
                 .accountNonLocked(true)
                 .failedLoginAttempts(0)
                 .accountExpiryDate(LocalDateTime.now().plusYears(accountExpiryYears))
-                .roles(new HashSet<>())
+                .roles(roles)
                 .build();
         
-        return ResponseEntity.ok(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        log.info("Created new user: {} with default role: USER", savedUser.getUsername());
+        
+        return ResponseEntity.ok(savedUser);
     }
 
     @GetMapping

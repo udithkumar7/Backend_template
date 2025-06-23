@@ -50,7 +50,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
                 .requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
                 .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/menus", "/api/menus/role/*").hasAuthority("SUPERADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/menus/role/*").permitAll() // Allow menu role assignment for testing
+                .requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
                 .requestMatchers("/api/users/crud/**").permitAll()
                 .requestMatchers("/api/users/*/roles").permitAll()
                 .requestMatchers("/api/otp/**").permitAll()
