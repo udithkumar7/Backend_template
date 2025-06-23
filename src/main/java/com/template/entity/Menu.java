@@ -14,7 +14,8 @@ import com.template.util.ValidationConstants;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"parentMenu"})
+@ToString(exclude = {"parentMenu"})
 public class Menu extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,10 +32,8 @@ public class Menu extends BaseAuditEntity {
     private String path;
 
     @Column(name = "display_order", nullable = false)
-    @NotNull(message = ValidationConstants.NOT_NULL_MESSAGE)
     @Min(value = 0, message = "Display order must be non-negative")
-    @Builder.Default
-    private Integer displayOrder = 0;
+    private Integer displayOrder;
 
     @Column(length = 500)
     @Size(max = 500, message = ValidationConstants.DESCRIPTION_SIZE_MESSAGE)
@@ -49,6 +48,6 @@ public class Menu extends BaseAuditEntity {
     private String icon; // For UI icons (e.g., "dashboard", "users", "settings")
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_menu_id")
+    @JoinColumn(name = "parent_menu_id", referencedColumnName = "id")
     private Menu parentMenu; // For hierarchical menus (main menu -> sub menu)
 } 

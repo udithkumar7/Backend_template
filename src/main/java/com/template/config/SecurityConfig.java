@@ -38,7 +38,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/logout", "/h2-console/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/logout-all", "/api/auth/refresh", "/h2-console/**").permitAll()
                 .requestMatchers("/api/audit-test/**").permitAll()
                 .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
                 .requestMatchers("/api/jquery/**").permitAll() // Allow access to jQuery backend endpoints

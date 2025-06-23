@@ -37,7 +37,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (token != null && !tokenBlacklistService.isTokenBlacklisted(token)) {
             String username = jwtUtil.extractUsername(token);
-            if (username != null && jwtUtil.validateToken(token, username)) {
+            // Only allow access tokens for authentication (not refresh tokens)
+            if (username != null && jwtUtil.validateToken(token, username) && jwtUtil.isAccessToken(token)) {
                 // Extract authorities from JWT
                 var claims = jwtUtil.extractAllClaims(token);
                 var authoritiesObj = claims.get("authorities");

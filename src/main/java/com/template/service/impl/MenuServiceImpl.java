@@ -21,12 +21,29 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public Menu createMenu(Menu menu) {
-        if (menu.getDisplayOrder() == null) {
-            // Auto-assign next available order
+        log.info("MenuService: Creating menu '{}' with parent: {}", 
+                menu.getName(), 
+                menu.getParentMenu() != null ? menu.getParentMenu().getId() : "null");
+        
+        if (menu.getDisplayOrder() == null || menu.getDisplayOrder() <= 0) {
+            // Auto-assign next available order (highest + 1)
             Integer maxOrder = menuRepository.findMaxDisplayOrder();
             menu.setDisplayOrder(maxOrder + 1);
+            log.info("Auto-assigned display order {} to menu: {}", maxOrder + 1, menu.getName());
+        } else {
+            // If a specific order is provided, insert at that position
+            // First increment orders of existing menus at and after the position
+            menuRepository.incrementOrdersFrom(menu.getDisplayOrder());
+            log.info("Inserted menu {} at specific position {}", menu.getName(), menu.getDisplayOrder());
         }
-        return menuRepository.save(menu);
+        
+        Menu savedMenu = menuRepository.save(menu);
+        log.info("MenuService: Saved menu '{}' with ID: {} and parent: {}", 
+                savedMenu.getName(), 
+                savedMenu.getId(),
+                savedMenu.getParentMenu() != null ? savedMenu.getParentMenu().getId() : "null");
+        
+        return savedMenu;
     }
 
     @Override

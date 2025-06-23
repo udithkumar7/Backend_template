@@ -40,4 +40,8 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     // Get the maximum display order
     @Query("SELECT COALESCE(MAX(m.displayOrder), 0) FROM Menu m")
     Integer findMaxDisplayOrder();
+    
+    // Find menu with parent - useful for debugging
+    @Query("SELECT m FROM Menu m LEFT JOIN FETCH m.parentMenu WHERE m.id = :id")
+    Optional<Menu> findByIdWithParent(@Param("id") Long id);
 } 
