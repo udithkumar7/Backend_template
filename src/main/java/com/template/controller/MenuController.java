@@ -9,8 +9,13 @@ import com.template.repository.RoleRepository;
 import com.template.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/menus")
 @RequiredArgsConstructor
+@Validated
 public class MenuController {
     private final MenuRepository menuRepository;
     private final RoleRepository roleRepository;
@@ -28,7 +34,7 @@ public class MenuController {
 
     // Create a menu (superadmin only)
     @PostMapping
-    public ResponseEntity<Menu> createMenu(@RequestBody Menu menu) {
+    public ResponseEntity<Menu> createMenu(@Valid @RequestBody Menu menu) {
         return ResponseEntity.ok(menuService.createMenu(menu));
     }
 
@@ -52,13 +58,13 @@ public class MenuController {
 
     // Get sub-menus for a parent menu
     @GetMapping("/{parentId}/submenu")
-    public List<Menu> getSubMenus(@PathVariable Long parentId) {
+    public List<Menu> getSubMenus(@PathVariable @Positive(message = "Parent ID must be positive") Long parentId) {
         return menuService.getSubMenusOrdered(parentId);
     }
 
     // Get menu by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Menu> getMenu(@PathVariable Long id) {
+    public ResponseEntity<Menu> getMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         return menuService.getMenuById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -66,7 +72,7 @@ public class MenuController {
 
     // Update menu
     @PutMapping("/{id}")
-    public ResponseEntity<Menu> updateMenu(@PathVariable Long id, @RequestBody Menu menu) {
+    public ResponseEntity<Menu> updateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id, @Valid @RequestBody Menu menu) {
         try {
             return ResponseEntity.ok(menuService.updateMenu(id, menu));
         } catch (IllegalArgumentException e) {
@@ -76,7 +82,7 @@ public class MenuController {
 
     // Delete menu
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.deleteMenu(id);
             return ResponseEntity.noContent().build();
@@ -89,7 +95,7 @@ public class MenuController {
 
     // Move menu up by one position
     @PutMapping("/{id}/move-up")
-    public ResponseEntity<Menu> moveMenuUp(@PathVariable Long id) {
+    public ResponseEntity<Menu> moveMenuUp(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             return ResponseEntity.ok(menuService.moveMenuUp(id));
         } catch (IllegalArgumentException e) {
@@ -99,7 +105,7 @@ public class MenuController {
 
     // Move menu down by one position
     @PutMapping("/{id}/move-down")
-    public ResponseEntity<Menu> moveMenuDown(@PathVariable Long id) {
+    public ResponseEntity<Menu> moveMenuDown(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             return ResponseEntity.ok(menuService.moveMenuDown(id));
         } catch (IllegalArgumentException e) {
@@ -109,7 +115,7 @@ public class MenuController {
 
     // Move menu to specific position
     @PutMapping("/{id}/move-to/{position}")
-    public ResponseEntity<Menu> moveMenuToPosition(@PathVariable Long id, @PathVariable Integer position) {
+    public ResponseEntity<Menu> moveMenuToPosition(@PathVariable @Positive(message = "Menu ID must be positive") Long id, @PathVariable @PositiveOrZero(message = "Position must be non-negative") Integer position) {
         try {
             return ResponseEntity.ok(menuService.moveMenuToPosition(id, position));
         } catch (IllegalArgumentException e) {
@@ -119,7 +125,7 @@ public class MenuController {
 
     // Bulk reorder menus
     @PutMapping("/reorder")
-    public ResponseEntity<String> reorderMenus(@RequestBody List<Long> menuIds) {
+    public ResponseEntity<String> reorderMenus(@RequestBody @NotEmpty(message = "Menu IDs list cannot be empty") List<@Positive(message = "Each menu ID must be positive") Long> menuIds) {
         try {
             menuService.reorderMenus(menuIds);
             return ResponseEntity.ok("Menus reordered successfully");
@@ -130,7 +136,7 @@ public class MenuController {
 
     // Activate/Deactivate menu
     @PutMapping("/{id}/activate")
-    public ResponseEntity<String> activateMenu(@PathVariable Long id) {
+    public ResponseEntity<String> activateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.activateMenu(id);
             return ResponseEntity.ok("Menu activated");
@@ -140,7 +146,7 @@ public class MenuController {
     }
 
     @PutMapping("/{id}/deactivate")
-    public ResponseEntity<String> deactivateMenu(@PathVariable Long id) {
+    public ResponseEntity<String> deactivateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.deactivateMenu(id);
             return ResponseEntity.ok("Menu deactivated");
@@ -152,8 +158,8 @@ public class MenuController {
     // Set menus for a role (superadmin only)
     @PostMapping("/role/{roleId}")
     public ResponseEntity<?> setMenusForRole(
-            @PathVariable Long roleId,
-            @RequestBody Set<Long> menuIds) {
+            @PathVariable @Positive(message = "Role ID must be positive") Long roleId,
+            @RequestBody @NotEmpty(message = "Menu IDs set cannot be empty") Set<@Positive(message = "Each menu ID must be positive") Long> menuIds) {
         Optional<Role> roleOpt = roleRepository.findById(roleId);
         if (roleOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Role not found");
@@ -173,7 +179,7 @@ public class MenuController {
 
     // Get menus for a role
     @GetMapping("/role/{roleId}")
-    public ResponseEntity<List<Menu>> getMenusForRole(@PathVariable Long roleId) {
+    public ResponseEntity<List<Menu>> getMenusForRole(@PathVariable @Positive(message = "Role ID must be positive") Long roleId) {
         Optional<Role> roleOpt = roleRepository.findById(roleId);
         if (roleOpt.isEmpty()) {
             return ResponseEntity.badRequest().build();

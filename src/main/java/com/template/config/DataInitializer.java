@@ -22,7 +22,7 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Profile({"dev", "prod"}) // Run in dev and prod profiles, skip in test
+@Profile({"dev"}) // SECURITY FIX: Only run in dev profile, NOT prod
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
@@ -31,24 +31,35 @@ public class DataInitializer implements CommandLineRunner {
     private final CodeRepository codeRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.init.superadmin.username:superadmin}")
+    // SECURITY FIX: Make credentials mandatory in environment variables
+    @Value("${app.init.superadmin.username:#{null}}")
     private String superadminUsername;
 
-    @Value("${app.init.superadmin.password:SuperAdmin@123}")
+    @Value("${app.init.superadmin.password:#{null}}")
     private String superadminPassword;
 
-    @Value("${app.init.superadmin.email:superadmin@template.com}")
+    @Value("${app.init.superadmin.email:#{null}}")
     private String superadminEmail;
 
     @Value("${auth.account-expiry-years:1}")
     private int accountExpiryYears;
+
+    @Value("${app.init.force-superadmin-creation:false}")
+    private boolean forceSuperadminCreation;
 
     @Override
     public void run(String... args) throws Exception {
         log.info("Starting data initialization...");
         
         initializeRoles();
-        initializeSuperAdminUser();
+        
+        // SECURITY FIX: Only create superadmin if explicitly enabled and configured
+        if (forceSuperadminCreation) {
+            initializeSuperAdminUser();
+        } else {
+            log.info("Superadmin creation disabled. Use app.init.force-superadmin-creation=true to enable.");
+        }
+        
         initializeDefaultMenus();
         initializeDefaultCodes();
         
@@ -87,6 +98,28 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeSuperAdminUser() {
         log.info("Initializing superadmin user...");
         
+        // SECURITY FIX: Validate all required fields are provided
+        if (superadminUsername == null || superadminUsername.trim().isEmpty()) {
+            log.error("SECURITY: Superadmin username not provided. Set app.init.superadmin.username");
+            throw new IllegalStateException("Superadmin username is required but not configured");
+        }
+        
+        if (superadminPassword == null || superadminPassword.trim().isEmpty()) {
+            log.error("SECURITY: Superadmin password not provided. Set app.init.superadmin.password");
+            throw new IllegalStateException("Superadmin password is required but not configured");
+        }
+        
+        if (superadminEmail == null || superadminEmail.trim().isEmpty()) {
+            log.error("SECURITY: Superadmin email not provided. Set app.init.superadmin.email");
+            throw new IllegalStateException("Superadmin email is required but not configured");
+        }
+        
+        // SECURITY FIX: Validate password strength
+        if (!isPasswordSecure(superadminPassword)) {
+            log.error("SECURITY: Superadmin password does not meet security requirements");
+            throw new IllegalStateException("Superadmin password must be at least 12 characters with mixed case, numbers, and special characters");
+        }
+
         // Check if superadmin user already exists
         if (userRepository.findByUsername(superadminUsername).isPresent()) {
             log.info("Superadmin user already exists: {}", superadminUsername);
@@ -118,7 +151,21 @@ public class DataInitializer implements CommandLineRunner {
         userRepository.save(superadmin);
         
         log.info("Created superadmin user: {} with email: {}", superadminUsername, superadminEmail);
-        log.warn("IMPORTANT: Default superadmin password is '{}'. Please change it after first login!", superadminPassword);
+        // SECURITY FIX: Never log the actual password
+        log.warn("IMPORTANT: Please change the superadmin password after first login!");
+        log.warn("SECURITY NOTICE: The superadmin account has been created. Consider disabling this initializer in production.");
+    }
+    
+    // SECURITY FIX: Add password strength validation
+    private boolean isPasswordSecure(String password) {
+        if (password.length() < 12) return false;
+        
+        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
+        boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        boolean hasSpecial = password.chars().anyMatch(ch -> "!@#$%^&*()_+-=[]{}|;:,.<>?".indexOf(ch) >= 0);
+        
+        return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 
     private void initializeDefaultMenus() {

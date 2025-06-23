@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider")
-@EnableJpaRepositories(basePackages = "com.template.repository")
+@EnableJpaRepositories(basePackages = {"com.template.repository", "com.template.jquery.repository"})
 public class JpaConfig {
 
     @Bean
