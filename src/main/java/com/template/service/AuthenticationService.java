@@ -3,6 +3,7 @@ package com.template.service;
 import com.template.entity.User;
 import com.template.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,9 +13,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationService {
     
     private final AuthenticationManager authenticationManager;
@@ -28,14 +31,25 @@ public class AuthenticationService {
     private int lockDurationMinutes;
     
     public AuthenticationResult authenticate(String username, String password) {
+        // First check if account needs time-based unlock
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user != null && Boolean.FALSE.equals(user.getAccountNonLocked()) && 
+            user.getAccountLockedUntil() != null && 
+            java.time.LocalDateTime.now().isAfter(user.getAccountLockedUntil())) {
+            // Auto-unlock expired account
+            userService.onLoginSuccess(user);
+        }
+        
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
             );
             
             // If we reach here, authentication was successful
-            User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found after successful authentication"));
+            if (user == null) {
+                user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found after successful authentication"));
+            }
             
             userService.onLoginSuccess(user);
             
@@ -43,9 +57,15 @@ public class AuthenticationService {
             
         } catch (BadCredentialsException e) {
             // Invalid credentials
-            User user = userRepository.findByUsername(username).orElse(null);
+            if (user == null) {
+                user = userRepository.findByUsername(username).orElse(null);
+            }
             if (user != null) {
+                log.debug("BadCredentialsException for user: {}, Current failed attempts: {}", 
+                         user.getUsername(), user.getFailedLoginAttempts());
                 userService.onLoginFailure(user, maxLoginAttempts, lockDurationMinutes);
+            } else {
+                log.debug("BadCredentialsException for non-existent user: {}", username);
             }
             return new AuthenticationResult(false, "Invalid credentials", null);
             

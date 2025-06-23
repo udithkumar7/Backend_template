@@ -84,15 +84,15 @@ public class User extends BaseAuditEntity implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        if (Boolean.TRUE.equals(accountNonLocked)) {
-            return true;
+        // Check if account is explicitly locked and lock time hasn't expired
+        if (Boolean.FALSE.equals(accountNonLocked)) {
+            if (accountLockedUntil != null && LocalDateTime.now().isAfter(accountLockedUntil)) {
+                // Time-based unlock: Mark for unlock but don't save here (will be saved by service)
+                return true; // Allow this login attempt, service will handle the unlock
+            }
+            return false; // Still locked
         }
-        // Auto-unlock logic
-        if (accountLockedUntil != null && LocalDateTime.now().isAfter(accountLockedUntil)) {
-            unlockAccount();
-            return true;
-        }
-        return false;
+        return true; // Account is not locked
     }
 
     @Override

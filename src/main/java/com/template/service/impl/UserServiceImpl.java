@@ -6,6 +6,7 @@ import com.template.repository.UserRepository;
 import com.template.repository.RoleRepository;
 import com.template.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -62,8 +64,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public void onLoginFailure(User user, int maxAttempts, int lockDurationMinutes) {
         user.incrementFailedLoginAttempts();
+        log.info("Login failure for user: {}, Failed attempts: {}, Max attempts: {}", 
+                user.getUsername(), user.getFailedLoginAttempts(), maxAttempts);
+        
         if (user.getFailedLoginAttempts() >= maxAttempts) {
-            user.lockAccount(LocalDateTime.now().plusMinutes(lockDurationMinutes));
+            LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(lockDurationMinutes);
+            user.lockAccount(lockUntil);
+            log.warn("Account locked for user: {} until: {}", user.getUsername(), lockUntil);
         }
         userRepository.save(user);
     }

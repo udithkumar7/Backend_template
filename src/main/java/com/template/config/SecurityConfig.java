@@ -50,10 +50,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
                 .requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
                 .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/menus", "/api/menus/role/*").hasAuthority("ROLE_SUPERADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/menus", "/api/menus/role/*").hasAuthority("SUPERADMIN")
                 .requestMatchers("/api/users/crud/**").permitAll()
                 .requestMatchers("/api/users/*/roles").permitAll()
-                //.requestMatchers("/api/otp/**").permitAll()
+                .requestMatchers("/api/otp/**").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
