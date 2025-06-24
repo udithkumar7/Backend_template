@@ -42,18 +42,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/audit-test/**").permitAll()
                 .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
                 .requestMatchers("/api/jquery/**").permitAll() // Allow access to jQuery backend endpoints
-                .requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
-                .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
-                .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
-                .requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
-                .requestMatchers(HttpMethod.GET, "/api/location-codes/**").permitAll() // Allow viewing location codes for testing
-                .requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
-                .requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
-                .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
+                //.requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
+                //.requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
+                //.requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
+                //.requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
+                //.requestMatchers(HttpMethod.GET, "/api/location-codes/**").permitAll() // Allow viewing location codes for testing
+                //.requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
+                //.requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
+                //.requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/menus/role/*").permitAll() // Allow menu role assignment for testing
-                .requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
+                //.requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
                 .requestMatchers("/api/users/crud/**").permitAll()
-                .requestMatchers("/api/users/*/roles").permitAll()
+                //.requestMatchers("/api/users/*/roles").permitAll()
                 .requestMatchers("/api/otp/**").permitAll()
                 .anyRequest().authenticated()
             )

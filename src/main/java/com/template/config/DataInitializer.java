@@ -41,7 +41,7 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.init.superadmin.email:#{null}}")
     private String superadminEmail;
 
-    @Value("${auth.account-expiry-years:2}")
+    @Value("${auth.account-expiry-years:3}")
     private int accountExpiryYears;
 
     @Value("${app.init.force-superadmin-creation:false}")

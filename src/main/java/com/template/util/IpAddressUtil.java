@@ -38,7 +38,7 @@ public class IpAddressUtil {
      */
     public String getClientIpAddress(HttpServletRequest request) {
         if (request == null) {
-            return "unknown";
+            return "127.0.0.1"; // Default to localhost instead of unknown
         }
 
         // Check each header for IP address
@@ -57,8 +57,22 @@ public class IpAddressUtil {
             return remoteAddr;
         }
 
-        log.warn("Could not determine client IP address, using 'unknown'");
-        return "unknown";
+        // Handle common development scenarios
+        if (remoteAddr != null) {
+            // IPv6 localhost
+            if ("0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr)) {
+                log.debug("Using localhost IP for IPv6 address: {}", remoteAddr);
+                return "127.0.0.1";
+            }
+            // If it's not empty but not valid IPv4, return localhost for development
+            if (!remoteAddr.trim().isEmpty()) {
+                log.debug("Using localhost IP for non-standard remote address: {}", remoteAddr);
+                return "127.0.0.1";
+            }
+        }
+
+        log.warn("Could not determine client IP address, using localhost for development");
+        return "127.0.0.1"; // Default to localhost for development
     }
 
     /**
