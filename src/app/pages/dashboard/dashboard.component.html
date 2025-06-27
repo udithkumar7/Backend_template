@@ -1,0 +1,143 @@
+<!-- Loading Overlay -->
+<div *ngIf="isLoading" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+  <div class="text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+    <p class="mt-4 text-gray-600">Loading dashboard...</p>
+  </div>
+</div>
+
+<!-- Shared Layout Wrapper -->
+<app-layout-wrapper pageTitle="Dashboard">
+  <!-- Page Content -->
+  <div class="p-6 space-y-6">
+    <!-- Welcome Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Welcome back, {{ currentUser.name }}!</h1>
+          <p class="mt-2 text-gray-600">Here's what's happening with your business today.</p>
+        </div>
+        <button class="btn-primary flex items-center space-x-2">
+          <span class="material-icons text-sm">add</span>
+          <span>Quick Action</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div *ngFor="let stat of statCards" class="stat-card">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <p class="text-lg font-medium text-gray-900">{{ stat.title }}</p>
+            <h3 class="mt-2 text-3xl font-bold" [class]="getStatColorClass(stat.color)">
+              {{ stat.value }}
+            </h3>
+            <div class="mt-2 flex items-center text-sm">
+              <span [class]="stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'" 
+                    class="flex items-center">
+                <span class="material-icons text-sm">
+                  {{ stat.changeType === 'increase' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                {{ stat.change }}
+              </span>
+              <span class="text-gray-500 ml-1">from last month</span>
+            </div>
+          </div>
+          <div [class]="'h-12 w-12 rounded-full flex items-center justify-center ' + getStatBgClass(stat.color)">
+            <span [class]="'material-icons ' + getStatColorClass(stat.color)">{{ stat.icon }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Recent Activity -->
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-sm">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        </div>
+        <div class="p-6">
+          <div class="space-y-6">
+            <div class="flex items-start space-x-4">
+              <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span class="material-icons text-white text-sm">person_add</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-gray-900">New user registered</h3>
+                <p class="text-sm text-gray-500">Sarah Johnson created an account</p>
+                <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+              </div>
+            </div>
+            
+            <div class="flex items-start space-x-4">
+              <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                  <span class="material-icons text-white text-sm">shopping_cart</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-gray-900">New order received</h3>
+                <p class="text-sm text-gray-500">Order #1234 for $299.99</p>
+                <p class="text-xs text-gray-400 mt-1">4 hours ago</p>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-4">
+              <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                  <span class="material-icons text-white text-sm">inventory</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-sm font-medium text-gray-900">Product updated</h3>
+                <p class="text-sm text-gray-500">iPhone 15 Pro inventory updated</p>
+                <p class="text-xs text-gray-400 mt-1">6 hours ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="bg-white rounded-xl shadow-sm">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900">Quick Links</h2>
+        </div>
+        <div class="p-6">
+          <div class="space-y-3">
+            <a routerLink="/admin" 
+               class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <span class="material-icons text-blue-600">admin_panel_settings</span>
+              <span class="text-sm font-medium text-gray-900">Admin Panel</span>
+            </a>
+            
+            <a routerLink="/profile" 
+               class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <span class="material-icons text-green-600">person</span>
+              <span class="text-sm font-medium text-gray-900">User Profile</span>
+            </a>
+            
+            <a routerLink="/menu-management" 
+               class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <span class="material-icons text-purple-600">menu_book</span>
+              <span class="text-sm font-medium text-gray-900">Menu Management</span>
+            </a>
+            
+            <a routerLink="/settings" 
+               class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <span class="material-icons text-gray-600">settings</span>
+              <span class="text-sm font-medium text-gray-900">Settings</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-layout-wrapper>
+
+
+                   
