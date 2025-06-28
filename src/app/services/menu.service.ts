@@ -164,6 +164,7 @@ export class MenuService {
             },
             { id: 3, label: 'Role Management', icon: 'shield', route: '/roles' },
             { id: 4, label: 'Menu Management', icon: 'menu', route: '/menus' },
+            { id: 8, label: 'Code Management', icon: 'code', route: '/code_mangement' },
             { id: 5, label: 'Reports', icon: 'chart-bar', route: '/reports' },
             { id: 6, label: 'Settings', icon: 'cog', route: '/settings' }
           ];

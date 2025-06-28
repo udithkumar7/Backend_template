@@ -15,6 +15,29 @@ export interface UserProfile {
   enabled: boolean;
 }
 
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  accountNonLocked: boolean;
+  failedLoginAttempts: number;
+  accountExpiryDate: string;
+  enabled: boolean;
+  roles: Role[];
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface UserCreateRequest {
+  username: string;
+  password: string;
+  email: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -30,6 +53,50 @@ export class UserService {
     }
   }
 
+  // User CRUD Operations
+  createUser(userData: UserCreateRequest): Observable<User> {
+    return this.http.post<User>(`${this.baseUrl}/users/crud`, userData);
+  }
+
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.baseUrl}/users/crud`);
+  }
+
+  getUserById(id: number): Observable<User> {
+    return this.http.get<User>(`${this.baseUrl}/users/crud/${id}`);
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/crud/${id}`);
+  }
+
+  // Role Management
+  assignRolesToUser(userId: number, roleNames: string[]): Observable<User> {
+    return this.http.post<User>(`${this.baseUrl}/users/${userId}/roles`, roleNames);
+  }
+
+  removeRolesFromUser(userId: number, roleNames: string[]): Observable<User> {
+    return this.http.delete<User>(`${this.baseUrl}/users/${userId}/roles`, { body: roleNames });
+  }
+
+  // Role CRUD Operations
+  createRole(role: Partial<Role>): Observable<Role> {
+    return this.http.post<Role>(`${this.baseUrl}/roles`, role);
+  }
+
+  getAllRoles(): Observable<Role[]> {
+    return this.http.get<Role[]>(`${this.baseUrl}/roles`);
+  }
+
+  getRoleById(id: number): Observable<Role> {
+    return this.http.get<Role>(`${this.baseUrl}/roles/${id}`);
+  }
+
+  deleteRole(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/roles/${id}`);
+  }
+
+  // Profile Management (existing methods)
   loadUserProfile(): Observable<UserProfile> {
     return this.http.get<UserProfile>(`${this.baseUrl}/users/profile`).pipe(
       tap(user => {

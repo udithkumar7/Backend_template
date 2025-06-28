@@ -7,6 +7,7 @@ import { RolesComponent } from './pages/roles/roles.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { Subdashsds35b5oa4rdComponent } from './pages/subdashsds35b5oa4rd/subdashsds35b5oa4rd.component';
+import { CodeManagementComponent } from './pages/code-management/code-management.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -41,6 +42,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   { 
+    path: 'code_mangement', 
+    component: CodeManagementComponent,
+    canActivate: [authGuard]
+  },
+  { 
     path: 'reports', 
     component: ReportsComponent,
     canActivate: [authGuard]
@@ -53,6 +59,11 @@ export const routes: Routes = [
   { 
     path: 'subdashsds35b5oa4rd', 
     component: Subdashsds35b5oa4rdComponent,
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'hybrid-encryption-test', 
+    loadComponent: () => import('./components/hybrid-encryption-test/hybrid-encryption-test.component').then(m => m.HybridEncryptionTestComponent),
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: '/login' }

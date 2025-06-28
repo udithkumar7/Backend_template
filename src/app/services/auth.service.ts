@@ -17,6 +17,7 @@ export interface LoginResponse {
   message: string;
   accessTokenExpiresIn: number;
   refreshTokenExpiresIn: number;
+  roles?: string[];
 }
 
 export interface RegisterRequest {
@@ -66,9 +67,13 @@ export class AuthService {
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
           localStorage.setItem('username', response.username);
+          if (response.roles) {
+            localStorage.setItem('roles', JSON.stringify(response.roles));
+          }
           this.currentUserSubject.next({ 
             username: response.username, 
-            token: response.accessToken 
+            token: response.accessToken,
+            roles: response.roles || []
           });
         }
       })
@@ -104,13 +109,19 @@ export class AuthService {
       responseType: 'text'
     }).pipe(
       tap(() => {
-        localStorage.clear();
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('roles');
+        localStorage.removeItem('username');
         this.currentUserSubject.next(null);
         this.userService.clearUserData();
       }),
       finalize(() => {
         // Always clear local data
-        localStorage.clear();
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('roles');
+        localStorage.removeItem('username');
         this.currentUserSubject.next(null);
         this.userService.clearUserData();
       })
@@ -135,5 +146,28 @@ export class AuthService {
 
   getCurrentUser(): any {
     return this.currentUserSubject.value;
+  }
+
+  refreshToken(): Observable<LoginResponse> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    return this.http.post<LoginResponse>(`${this.baseUrl}/auth/refresh`, { refreshToken }).pipe(
+      tap(response => {
+        if (response.accessToken) {
+          localStorage.setItem('accessToken', response.accessToken);
+        }
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
+        }
+      })
+    );
+  }
+
+  getUserRoles(): string[] {
+    const roles = localStorage.getItem('roles');
+    return roles ? JSON.parse(roles) : [];
+  }
+
+  isAdmin(): boolean {
+    return this.getUserRoles().includes('ROLE_ADMIN');
   }
 }

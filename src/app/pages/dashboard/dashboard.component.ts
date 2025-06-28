@@ -1,10 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { UserService, UserProfile } from '../../services/user.service';
 import { LayoutWrapperComponent } from '../../shared/layout/layout-wrapper.component';
+import { HybridEncryptionService } from '../../services/hybrid-encryption.service';
 import { Subscription } from 'rxjs';
 
 interface StatCard {
@@ -27,7 +29,7 @@ interface UserData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, LayoutWrapperComponent],
+  imports: [CommonModule, RouterModule, FormsModule, LayoutWrapperComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -35,6 +37,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   isLoading = true;
   isLoggingOut = false;
   private userSubscription?: Subscription;
+  
+  // Hybrid Encryption Test Properties
+  testMessage: string = 'Hello World! This is a test message for hybrid encryption.';
+  isEncrypting: boolean = false;
+  encryptionResult: string = '';
+  encryptionError: string = '';
   
   currentUser: UserData = {
     name: '',
@@ -104,7 +112,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private toastService: ToastService,
-    private userService: UserService
+    private userService: UserService,
+    private hybridEncryptionService: HybridEncryptionService
   ) {}
 
   logout() {
@@ -142,5 +151,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
       purple: 'bg-purple-100'
     };
     return colorMap[color] || 'bg-gray-100';
+  }
+
+  // Hybrid Encryption Test Methods
+  async testEncryption() {
+    if (!this.testMessage.trim()) {
+      this.encryptionError = 'Please enter a message to encrypt';
+      return;
+    }
+
+    this.isEncrypting = true;
+    this.encryptionResult = '';
+    this.encryptionError = '';
+
+    try {
+      const result = await this.hybridEncryptionService.performHybridEncryption(this.testMessage);
+      this.encryptionResult = result;
+      this.toastService.showSuccess('Encryption test completed successfully!');
+    } catch (error) {
+      console.error('Encryption test failed:', error);
+      this.encryptionError = error instanceof Error ? error.message : 'Encryption test failed';
+      this.toastService.showError('Encryption test failed. Please check the console for details.');
+    } finally {
+      this.isEncrypting = false;
+    }
+  }
+
+  clearTest() {
+    this.testMessage = '';
+    this.encryptionResult = '';
+    this.encryptionError = '';
   }
 } 
